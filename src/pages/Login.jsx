@@ -1,0 +1,76 @@
+import { useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
+import LangToggle from '../components/LangToggle';
+import { Leaf } from 'lucide-react';
+import RambaLogo from '../components/RambaLogo';
+
+export default function Login() {
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const { login } = useAuth();
+  const { t } = useLang();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/dashboard';
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = login(form.email, form.password);
+    if (result.success) navigate(from, { replace: true });
+    else setError(result.error);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-800 to-emerald-500 flex items-center justify-center p-5">
+      <div className="bg-white rounded-2xl p-10 w-full max-w-md shadow-2xl">
+        <div className="flex justify-end mb-2">
+          <LangToggle />
+        </div>
+        <div className="text-center mb-7">
+          <div className="flex justify-center mb-2"><RambaLogo size={52} leafColor="#047857" crossColor="#ffffff" /></div>
+          <h1 className="text-2xl font-bold text-emerald-800 mb-1">{t('appName')}</h1>
+          <p className="text-gray-400 text-sm">{t('tagline')}</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <h2 className="text-xl font-bold text-gray-800 m-0">{t('welcomeBack')}</h2>
+
+          {error && <div className="bg-red-50 text-red-600 border border-red-200 px-4 py-2.5 rounded-lg text-sm">{error}</div>}
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-600">{t('emailLabel')}</label>
+            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+              placeholder={t('emailPlaceholder')} required
+              className="px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-600 transition-colors" />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-600">{t('passwordLabel')}</label>
+            <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
+              placeholder={t('passwordPlaceholder')} required
+              className="px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-600 transition-colors" />
+          </div>
+
+          <button type="submit"
+            className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-lg text-sm cursor-pointer transition-colors mt-1">
+            {t('signInBtn')}
+          </button>
+
+          <p className="text-center text-sm text-gray-500 mt-1">
+            {t('noAccount')}{' '}
+            <Link to="/register" className="text-emerald-700 font-medium no-underline">{t('registerLink')}</Link>
+          </p>
+        </form>
+
+        <div className="mt-5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-xs text-gray-500 leading-7">
+          <strong className="text-gray-700">{t('demoAccounts')}:</strong><br />
+          Patient: amara@example.com / password123<br />
+          Caregiver: chidi@example.com / password123<br />
+          Admin: admin@ramba.com / admin123
+        </div>
+      </div>
+    </div>
+  );
+}
