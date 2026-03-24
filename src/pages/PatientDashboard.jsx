@@ -2,6 +2,7 @@ import { useAuth } from '../context/AuthContext';
 import { useHealth } from '../context/HealthContext';
 import { useLang } from '../context/LanguageContext';
 import { Link } from 'react-router-dom';
+import { BarChart2, Heart, Users, BookOpen, Lightbulb, Activity, ClipboardList, Smile } from 'lucide-react';
 
 const conditionTips = {
   en: {
@@ -41,17 +42,24 @@ export default function PatientDashboard() {
   const todayTip = tips[new Date().getDay() % tips.length];
 
   const quickActions = [
-    { to: '/tracker', icon: '', label: t('logHealthData') },
-    { to: '/wellbeing', icon: '', label: t('checkIn') },
-    { to: '/education', icon: '', label: t('readArticles') },
-    { to: '/community', icon: '', label: t('navCommunityApp') },
+    { to: '/tracker',   Icon: BarChart2, label: t('logHealthData') },
+    { to: '/wellbeing', Icon: Heart,     label: t('checkIn') },
+    { to: '/education', Icon: BookOpen,  label: t('readArticles') },
+    { to: '/community', Icon: Users,     label: t('navCommunityApp') },
   ];
+
+  const stats = [
+    { Icon: ClipboardList, value: logs.length,          label: t('healthLogs') },
+    { Icon: Activity,      value: wellbeingLogs.length, label: t('checkIns') },
+    { Icon: BarChart2,     value: 7,                    label: t('dayStreak') },
+    lastMood ? { Icon: Smile, value: lastMood.mood, label: t('lastMood') } : null,
+  ].filter(Boolean);
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-between items-start flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 m-0 mb-1">{t('hello')}, {user.name.split(' ')[0]} 👋</h1>
+          <h1 className="text-2xl font-bold text-gray-900 m-0 mb-1">{t('hello')}, {user.name.split(' ')[0]}</h1>
           <p className="text-sm text-gray-500 m-0">
             {user.condition ? <>{t('managing')} <strong className="text-emerald-700">{user.condition}</strong></> : t('yourHealthDashboard')}
           </p>
@@ -61,15 +69,11 @@ export default function PatientDashboard() {
         </span>
       </div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { icon: '', value: logs.length, label: t('healthLogs') },
-          { icon: '', value: wellbeingLogs.length, label: t('checkIns') },
-          { icon: '', value: 7, label: t('dayStreak') },
-          lastMood ? { icon: lastMood.emoji, value: lastMood.mood, label: t('lastMood') } : null,
-        ].filter(Boolean).map((s, i) => (
+        {stats.map((s, i) => (
           <div key={i} className="bg-white rounded-xl p-4 flex flex-col items-center gap-1 shadow-sm text-center">
-            <span className="text-2xl">{s.icon}</span>
+            <s.Icon size={20} className="text-emerald-600" />
             <div className="text-xl font-bold text-emerald-700">{s.value}</div>
             <div className="text-xs text-gray-400">{s.label}</div>
           </div>
@@ -77,19 +81,21 @@ export default function PatientDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {/* Quick actions */}
         <div className="bg-white rounded-xl p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-700 m-0 mb-4">{t('quickActions')}</h2>
           <div className="grid grid-cols-2 gap-2.5">
             {quickActions.map(a => (
               <Link key={a.to} to={a.to}
                 className="flex flex-col items-center gap-1.5 p-3.5 bg-emerald-50 hover:bg-emerald-100 rounded-xl no-underline text-emerald-700 text-xs font-medium transition-colors text-center">
-                <span className="text-2xl">{a.icon}</span>
+                <a.Icon size={20} />
                 {a.label}
               </Link>
             ))}
           </div>
         </div>
 
+        {/* Recent logs */}
         <div className="bg-white rounded-xl p-5 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-semibold text-gray-700 m-0">{t('recentLogs')}</h2>
@@ -111,8 +117,9 @@ export default function PatientDashboard() {
         </div>
       </div>
 
+      {/* Daily tip */}
       <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl p-4 flex gap-3 items-start">
-        <span className="text-xl shrink-0"></span>
+        <Lightbulb size={18} className="text-emerald-600 shrink-0 mt-0.5" />
         <div>
           <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide mb-1">
             {user.condition ? `${t('dailyTipFor')} ${user.condition}` : t('dailyTipForYou')}
@@ -121,9 +128,10 @@ export default function PatientDashboard() {
         </div>
       </div>
 
+      {/* Well-being prompt */}
       {wellbeingLogs.length === 0 && (
         <div className="bg-white rounded-xl p-4 flex items-center gap-3 shadow-sm border-2 border-dashed border-emerald-200 flex-wrap">
-          <span className="text-3xl shrink-0"></span>
+          <Heart size={24} className="text-emerald-400 shrink-0" />
           <div className="flex-1">
             <div className="text-sm font-semibold text-gray-800">{t('howAreYouFeeling')}</div>
             <p className="text-xs text-gray-400 m-0 mt-0.5">{t('noCheckinYet')}</p>
