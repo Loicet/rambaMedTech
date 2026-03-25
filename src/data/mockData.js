@@ -45,20 +45,24 @@ export const mockReminders = [
   { id: 4, title: 'Take evening medication', time: '08:00 PM', type: 'medication', active: false },
 ];
 
-// Nudge reminders shown to caregivers — keyed by patient id
+// Nudge reminders shown to caregivers — keyed by patient id, driven by patient logs
 export const mockPatientNudges = {
   1: [
-    { id: 1, type: 'medication', text: 'Remind Amara to take her morning insulin.', time: '08:00 AM', done: false },
-    { id: 2, type: 'tracking',   text: "Amara hasn't logged her blood sugar today — follow up if needed.", time: '10:00 AM', done: false },
-    { id: 3, type: 'checkin',    text: 'Amara is due for her daily well-being check-in.', time: '12:00 PM', done: true },
+    { id: 1,  type: 'wellbeing',   text: "Amara logged fatigue in her last two well-being check-ins. Check on her today — she may need some encouragement.", time: 'This morning', done: false },
+    { id: 2,  type: 'tracking',    text: "Amara hasn't logged her blood sugar yet today. A gentle reminder could help keep her streak going.", time: '10:00 AM', done: false },
+    { id: 3,  type: 'appointment', text: "Amara has a follow-up with her endocrinologist on Friday. Make sure she's prepared and has her recent logs ready.", time: 'Upcoming', done: false },
+    { id: 4,  type: 'support',     text: "Amara reported feeling tired and a mild headache. She might need someone to talk to — reach out and let her know you're there.", time: 'Anytime', done: true },
   ],
   2: [
-    { id: 4, type: 'medication', text: 'Remind Kwame to take his blood pressure medication.', time: '07:30 AM', done: false },
-    { id: 5, type: 'tracking',   text: "Kwame's BP hasn't been logged in 2 days — check in with him.", time: '09:00 AM', done: false },
-    { id: 6, type: 'general',    text: 'Discuss stress management techniques with Kwame this week.', time: 'Anytime', done: false },
+    { id: 5,  type: 'alert',       text: "Kwame's blood pressure was logged at 148/92 mmHg yesterday — well above his target. Follow up with him urgently.", time: '07:30 AM', done: false },
+    { id: 6,  type: 'support',     text: "Kwame has been reporting stress and poor sleep this week. He may need emotional support — consider checking in with a call.", time: 'Anytime', done: false },
+    { id: 7,  type: 'appointment', text: "Kwame's medication review is due next week. Remind him to bring his BP log to the appointment.", time: 'Upcoming', done: false },
+    { id: 8,  type: 'tracking',    text: "Kwame's logging streak has dropped to 3 days. Encourage him to stay consistent — it helps you monitor him better.", time: '09:00 AM', done: false },
+    { id: 9,  type: 'wellbeing',   text: "Kwame logged 'Low' mood twice this week. He might not be feeling well — please be there and provide emotional support.", time: 'Today', done: false },
   ],
   3: [
-    { id: 7, type: 'medication', text: 'Remind Fatima to carry her rescue inhaler today.', time: '08:00 AM', done: true },
-    { id: 8, type: 'checkin',    text: 'Fatima is due for her weekly asthma symptom review.', time: '11:00 AM', done: false },
+    { id: 10, type: 'wellbeing',   text: "Fatima is doing great — her mood has been 'Great' for 4 of the last 5 days. A quick word of encouragement will go a long way.", time: 'Anytime', done: false },
+    { id: 11, type: 'appointment', text: "Fatima's routine asthma review is coming up next month. Remind her to track her peak flow daily until then.", time: 'Upcoming', done: false },
+    { id: 12, type: 'tracking',    text: "Fatima hasn't logged her peak flow this afternoon. A gentle nudge to keep her 7-day streak alive.", time: '03:00 PM', done: true },
   ],
 };
