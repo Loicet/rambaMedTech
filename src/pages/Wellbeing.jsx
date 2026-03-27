@@ -50,9 +50,13 @@ export default function Wellbeing() {
     prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
   );
 
-  const handleSubmit = () => {
-    addWellbeingLog({ mood: selected.label, symptoms: checkedSymptoms, note, date: new Date().toLocaleDateString() });
-    setDone(true);
+  const handleSubmit = async () => {
+    try {
+      await addWellbeingLog({ emotion: selected.labelKey.replace('mood', '').toUpperCase(), notes: [checkedSymptoms.join(', '), note].filter(Boolean).join(' | ') });
+      setDone(true);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const reset = () => { setStep(1); setSelected(null); setCheckedSymptoms([]); setNote(''); setDone(false); };

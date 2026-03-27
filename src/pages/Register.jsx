@@ -10,6 +10,7 @@ import { ShieldCheck } from 'lucide-react';
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'patient', condition: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [devOtp, setDevOtp] = useState('');
@@ -21,11 +22,14 @@ export default function Register() {
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = register(form.name, form.email, form.password, form.role, form.condition || null);
+    setLoading(true);
+    setError('');
+    const result = await register(form.name, form.email, form.password, form.role, form.condition || null);
+    setLoading(false);
     if (result.success) {
-      setDevOtp(result.otp); // In production this would be sent via email/SMS
+      if (result.otp) setDevOtp(result.otp);
       setOtpStep(true);
     } else {
       setError(result.error);
@@ -44,15 +48,18 @@ export default function Register() {
     if (e.key === 'Backspace' && !otp[i] && i > 0) inputRefs.current[i - 1]?.focus();
   };
 
-  const handleVerify = (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault();
-    const result = verifyOtp(otp.join(''));
+    setLoading(true);
+    setOtpError('');
+    const result = await verifyOtp(otp.join(''));
+    setLoading(false);
     if (result.success) navigate('/dashboard');
     else setOtpError(result.error);
   };
 
-  const handleResend = () => {
-    const newOtp = resendOtp();
+  const handleResend = async () => {
+    const newOtp = await resendOtp();
     if (newOtp) { setDevOtp(newOtp); setOtp(['', '', '', '', '', '']); setOtpError(''); inputRefs.current[0]?.focus(); }
   };
 
@@ -108,8 +115,9 @@ export default function Register() {
             )}
 
             <button type="submit"
-              className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-lg text-sm cursor-pointer transition-colors mt-1">
-              {t('createAccountBtn')}
+              disabled={loading}
+              className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white font-semibold py-3 rounded-lg text-sm cursor-pointer transition-colors mt-1">
+              {loading ? 'Please wait...' : t('createAccountBtn')}
             </button>
 
             <p className="text-center text-sm text-gray-500 mt-1">

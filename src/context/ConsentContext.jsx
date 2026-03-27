@@ -1,30 +1,49 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../api';
+import { useAuth } from './AuthContext';
 
 const ConsentContext = createContext(null);
 
-const DEFAULT_CONSENT = {
-  vitals:    true,  // caregiver can see vitals
-  mood:      true,  // caregiver can see emotional well-being
-  symptoms:  true,  // caregiver can see reported symptoms
-  insights:  true,  // caregiver can see AI health insights
-  reminders: true,  // caregiver gets nudge reminders about this patient
-};
+const DEFAULT_CONSENT = { vitals: true, mood: true, symptoms: true, insights: true, reminders: true };
 
 export function ConsentProvider({ children }) {
-  // keyed by patient id so it works for multiple patients
-  const [consentMap, setConsentMap] = useState({});
+  const { user } = useAuth();
+  const [consentCache, setConsentCache] = useState({});
 
-  const getConsent = (patientId) => consentMap[patientId] ?? DEFAULT_CONSENT;
+  // Load own consent on login
+  useEffect(() => {
+    if (!user) return;
+    api.getConsent().then(({ consent }) => {
+      setConsentCache(prev => ({ ...prev, [user.id]: consent }));
+    }).catch(() => {});
+  }, [user]);
 
-  const updateConsent = (patientId, key, value) => {
-    setConsentMap(prev => ({
-      ...prev,
-      [patientId]: { ...(prev[patientId] ?? DEFAULT_CONSENT), [key]: value },
-    }));
+  const getConsent = async (patientId) => {
+    if (consentCache[patientId]) return consentCache[patientId];
+    try {
+      const { consent } = await api.getConsent(patientId);
+      setConsentCache(prev => ({ ...prev, [patientId]: consent }));
+      return consent;
+    } catch {
+      return DEFAULT_CONSENT;
+    }
   };
 
+  const updateConsent = async (key, value) => {
+    try {
+      const { consent } = await api.updateConsent({ [key]: value });
+      setConsentCache(prev => ({ ...prev, [consent.patientId]: consent }));
+      return consent;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // Sync version for components that call getConsent() without await
+  const getConsentSync = (patientId) => consentCache[patientId] ?? DEFAULT_CONSENT;
+
   return (
-    <ConsentContext.Provider value={{ getConsent, updateConsent }}>
+    <ConsentContext.Provider value={{ getConsent, getConsentSync, updateConsent, consentCache }}>
       {children}
     </ConsentContext.Provider>
   );

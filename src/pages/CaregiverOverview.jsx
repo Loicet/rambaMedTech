@@ -1,50 +1,18 @@
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LanguageContext';
 import { useInvite } from '../context/InviteContext';
-import { useConsent } from '../context/ConsentContext';
 import { Link } from 'react-router-dom';
-import { AlertCircle, CheckCircle, Activity, Flame, UserPlus, Bell, Users, ArrowRight } from 'lucide-react';
-
-// patients mock — same data as CaregiverDashboard
-const patients = [
-  {
-    id: 1, name: 'Amara Kamara', condition: 'Diabetes', streak: 12,
-    vitals: [{ type: 'Blood Sugar', value: '112', unit: 'mg/dL', status: 'normal' }],
-    insights: [{ type: 'positive' }, { type: 'positive' }, { type: 'warning' }],
-    lastSeen: 'Today, 8:42 AM',
-  },
-  {
-    id: 2, name: 'Kwame Asante', condition: 'Hypertension', streak: 3,
-    vitals: [{ type: 'Blood Pressure', value: '148/92', unit: 'mmHg', status: 'high' }],
-    insights: [{ type: 'alert' }, { type: 'warning' }, { type: 'warning' }],
-    lastSeen: 'Yesterday, 6:15 PM',
-  },
-  {
-    id: 3, name: 'Fatima Mensah', condition: 'Asthma', streak: 7,
-    vitals: [{ type: 'Peak Flow', value: '460', unit: 'L/min', status: 'normal' }],
-    insights: [{ type: 'positive' }, { type: 'positive' }, { type: 'positive' }],
-    lastSeen: 'Today, 10:00 AM',
-  },
-];
-
-const vitalColor = { normal: 'text-green-600', high: 'text-red-500', low: 'text-orange-500' };
-const statusBadge = {
-  normal: 'bg-green-50 text-green-700',
-  high:   'bg-red-50 text-red-600',
-  low:    'bg-orange-50 text-orange-600',
-};
+import { AlertCircle, CheckCircle, Activity, UserPlus, Bell, Users, ArrowRight } from 'lucide-react';
 
 export default function CaregiverOverview() {
   const { user } = useAuth();
   const { t, lang } = useLang();
   const { getCaregiverPatients } = useInvite();
+  const linkedPatients = getCaregiverPatients();
 
-  const linkedInvites = getCaregiverPatients(user.id, user.email);
-  const linkedPatients = patients.filter(p => linkedInvites.some(inv => inv.patientId === p.id));
-
-  const alerts  = linkedPatients.filter(p => p.insights.some(i => i.type === 'alert'));
-  const warnings = linkedPatients.filter(p => !p.insights.some(i => i.type === 'alert') && p.insights.some(i => i.type === 'warning'));
-  const healthy  = linkedPatients.filter(p => p.insights.every(i => i.type === 'positive'));
+  const alerts   = linkedPatients.filter(p => p.insights?.some(i => i.type === 'alert'));
+  const warnings  = linkedPatients.filter(p => !p.insights?.some(i => i.type === 'alert') && p.insights?.some(i => i.type === 'warning'));
+  const healthy   = linkedPatients.filter(p => p.insights?.every(i => i.type === 'positive'));
 
   if (linkedPatients.length === 0) {
     return (
@@ -122,52 +90,24 @@ export default function CaregiverOverview() {
           </Link>
         </div>
         <div className="flex flex-col gap-3">
-          {linkedPatients.map(p => {
-            const topVital = p.vitals[0];
-            const hasAlert = p.insights.some(i => i.type === 'alert');
-            const hasWarning = p.insights.some(i => i.type === 'warning');
-            const statusIcon = hasAlert
-              ? <AlertCircle size={14} className="text-red-500" />
-              : hasWarning
-              ? <AlertCircle size={14} className="text-amber-500" />
-              : <CheckCircle size={14} className="text-green-500" />;
-
-            return (
-              <div key={p.id} className={`bg-white rounded-xl p-4 shadow-sm flex items-center gap-4 border-l-4
-                ${hasAlert ? 'border-l-red-400' : hasWarning ? 'border-l-amber-400' : 'border-l-emerald-400'}`}>
-                <div className="w-10 h-10 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shrink-0">
-                  {p.name[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-gray-900">{p.name}</span>
-                    {statusIcon}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-0.5">{p.condition} · Last seen {p.lastSeen}</div>
-                </div>
-                {/* Top vital */}
-                <div className="text-right shrink-0 hidden sm:block">
-                  <div className="text-xs text-gray-400">{topVital.type}</div>
-                  <div className={`text-sm font-bold ${vitalColor[topVital.status]}`}>
-                    {topVital.value} <span className="text-xs font-normal text-gray-400">{topVital.unit}</span>
-                  </div>
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${statusBadge[topVital.status]}`}>
-                    {topVital.status}
-                  </span>
-                </div>
-                {/* Streak */}
-                <div className="text-right shrink-0 hidden md:flex flex-col items-center gap-0.5">
-                  <Flame size={14} className="text-orange-400" />
-                  <span className="text-xs font-bold text-gray-700">{p.streak}</span>
-                  <span className="text-[10px] text-gray-400">streak</span>
-                </div>
-                <Link to="/caregiver/patients"
-                  className="text-emerald-600 hover:text-emerald-800 transition-colors shrink-0">
-                  <ArrowRight size={16} />
-                </Link>
+          {linkedPatients.map(p => (
+            <div key={p.id} className="bg-white rounded-xl p-4 shadow-sm flex items-center gap-4 border-l-4 border-l-emerald-400">
+              <div className="w-10 h-10 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                {p.name[0]}
               </div>
-            );
-          })}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-gray-900">{p.name}</span>
+                  <CheckCircle size={14} className="text-green-500" />
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">{p.condition || '—'}</div>
+              </div>
+              <Link to="/caregiver/patients"
+                className="text-emerald-600 hover:text-emerald-800 transition-colors shrink-0">
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
 

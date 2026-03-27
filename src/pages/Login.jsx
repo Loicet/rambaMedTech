@@ -9,15 +9,19 @@ import RambaLogo from '../components/RambaLogo';
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const { t } = useLang();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || '/dashboard';
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = login(form.email, form.password);
+    setLoading(true);
+    setError('');
+    const result = await login(form.email, form.password);
+    setLoading(false);
     if (result.success) navigate(from, { replace: true });
     else setError(result.error);
   };
@@ -53,9 +57,9 @@ export default function Login() {
               className="px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-600 transition-colors" />
           </div>
 
-          <button type="submit"
-            className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-lg text-sm cursor-pointer transition-colors mt-1">
-            {t('signInBtn')}
+          <button type="submit" disabled={loading}
+            className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white font-semibold py-3 rounded-lg text-sm cursor-pointer transition-colors mt-1">
+            {loading ? 'Signing in...' : t('signInBtn')}
           </button>
 
           <p className="text-center text-sm text-gray-500 mt-1">
@@ -64,12 +68,7 @@ export default function Login() {
           </p>
         </form>
 
-        <div className="mt-5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-xs text-gray-500 leading-7">
-          <strong className="text-gray-700">{t('demoAccounts')}:</strong><br />
-          Patient: amara@example.com / password123<br />
-          Caregiver: chidi@example.com / password123<br />
-          Admin: admin@ramba.com / admin123
-        </div>
+
       </div>
     </div>
   );

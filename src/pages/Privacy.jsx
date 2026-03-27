@@ -50,8 +50,8 @@ function Toggle({ enabled, onChange }) {
 
 export default function Privacy() {
   const { user } = useAuth();
-  const { getConsent, updateConsent } = useConsent();
-  const consent = getConsent(user.id);
+  const { getConsentSync, updateConsent } = useConsent();
+  const consent = getConsentSync(user.id);
 
   const allEnabled = Object.values(consent).every(Boolean);
   const allDisabled = Object.values(consent).every(v => !v);
@@ -86,7 +86,7 @@ export default function Privacy() {
             <p className="text-xs text-gray-400 m-0 mt-0.5">What your assigned caregiver can view on their dashboard</p>
           </div>
           <button
-            onClick={() => CONSENT_ITEMS.forEach(item => updateConsent(user.id, item.key, allEnabled ? false : true))}
+            onClick={() => CONSENT_ITEMS.forEach(item => updateConsent(item.key, allEnabled ? false : true))}
             className="text-xs text-emerald-700 font-medium bg-transparent border-0 cursor-pointer hover:underline"
           >
             {allEnabled ? 'Restrict all' : 'Allow all'}
@@ -112,7 +112,7 @@ export default function Privacy() {
                   </div>
                   <p className="text-xs text-gray-400 m-0 mt-0.5 leading-relaxed">{desc}</p>
                 </div>
-                <Toggle enabled={enabled} onChange={(val) => updateConsent(user.id, key, val)} />
+                <Toggle enabled={enabled} onChange={(val) => updateConsent(key, val)} />
               </div>
             );
           })}

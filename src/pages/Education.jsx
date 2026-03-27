@@ -1,18 +1,23 @@
-import { useState } from 'react';
-import { articles, conditions } from '../data/mockData';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LanguageContext';
+import { api } from '../api';
+import { conditions } from '../data/mockData';
 import { Clock, BookOpen, Star } from 'lucide-react';
 
 export default function Education() {
   const { user } = useAuth();
   const { t } = useLang();
-
   const userCondition = user?.condition || null;
   const [filter, setFilter] = useState(userCondition || 'All');
   const [selected, setSelected] = useState(null);
+  const [articles, setArticles] = useState([]);
 
-  const filtered = filter === 'All' ? articles : articles.filter(a => a.condition === filter);
+  useEffect(() => {
+    api.getContent().then(({ content }) => setArticles(content || [])).catch(() => {});
+  }, []);
+
+  const filtered = filter === 'All' ? articles : articles.filter(a => a.condition?.name === filter);
 
   if (selected) {
     return (
@@ -24,19 +29,17 @@ export default function Education() {
         <div className="bg-white rounded-xl p-5 sm:p-7 shadow-sm">
           <div className="flex items-center gap-2 flex-wrap mb-3">
             <span className="inline-block bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-              {selected.condition}
+              {selected.condition?.name || selected.condition}
             </span>
-            {selected.condition === userCondition && (
+            {(selected.condition?.name || selected.condition) === userCondition && (
               <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 text-xs font-bold px-2.5 py-1 rounded-full">
                 <Star size={10} /> For You
               </span>
             )}
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mt-2 mb-2">{selected.title}</h1>
-          <p className="text-xs text-gray-400 mb-5 flex items-center gap-1"><Clock size={11} /> {selected.readTime} {t('minRead')}</p>
-          <p className="text-sm text-gray-600 leading-relaxed mb-4">{selected.summary}</p>
-          <p className="text-sm text-gray-600 leading-relaxed mb-4">{t('articleBody1')}</p>
-          <p className="text-sm text-gray-600 leading-relaxed">{t('articleBody2')}</p>
+          <p className="text-xs text-gray-400 mb-5 flex items-center gap-1"><Clock size={11} /> {selected.readTime || '5 min'} {t('minRead')}</p>
+          <p className="text-sm text-gray-600 leading-relaxed mb-4">{selected.body || selected.summary}</p>
         </div>
       </div>
     );
@@ -86,14 +89,15 @@ export default function Education() {
       {/* Articles grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map(article => {
-          const isForUser = article.condition === userCondition;
+              const condName = article.condition?.name || article.condition;
+              const isForUser = condName === userCondition;
           return (
             <div key={article.id} onClick={() => setSelected(article)}
               className={`bg-white rounded-xl p-4 sm:p-5 shadow-sm border-2 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer flex flex-col gap-2
                 ${isForUser ? 'border-emerald-200 hover:border-emerald-500' : 'border-transparent hover:border-emerald-600'}`}>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="inline-block bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
-                  {article.condition}
+                  {article.condition?.name || article.condition}
                 </span>
                 {isForUser && (
                   <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-1 rounded-full">
@@ -104,7 +108,7 @@ export default function Education() {
               <h3 className="text-sm font-bold text-gray-900 m-0 leading-snug">{article.title}</h3>
               <p className="text-xs text-gray-500 leading-relaxed m-0 flex-1">{article.summary}</p>
               <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
-                <span className="flex items-center gap-1"><Clock size={10} /> {article.readTime}</span>
+                <span className="flex items-center gap-1"><Clock size={10} /> {article.readTime || '5 min'}</span>
                 <span className="text-emerald-700 font-medium">{t('readMore')}</span>
               </div>
             </div>

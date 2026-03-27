@@ -14,12 +14,12 @@ export default function RedeemInvite() {
   const [error, setError] = useState('');
   const [accepted, setAccepted] = useState(null);
 
-  const linkedPatients = getCaregiverPatients(user.id, user.email);
+  const linkedPatients = getCaregiverPatients();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const result = redeemInvite(code, user.id);
+    const result = await redeemInvite(code);
     if (result.success) setAccepted(result.invite);
     else setError(result.error);
   };

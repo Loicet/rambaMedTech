@@ -1,48 +1,61 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../api';
+import { useAuth } from './AuthContext';
 
 const InviteContext = createContext(null);
 
-// Pre-seeded so the demo caregiver (Dr. Chidi) is already linked to Amara (id:1)
-const INITIAL_INVITES = [
-  { code: 'RAMBA-001', patientId: 1, patientName: 'Amara Kamara', patientEmail: 'amara@example.com', caregiverEmail: 'chidi@example.com', status: 'accepted' },
-  { code: 'RAMBA-002', patientId: 1, patientName: 'Amara Kamara', patientEmail: 'amara@example.com', caregiverEmail: 'kwame.care@example.com', status: 'pending' },
-];
-
-const generateCode = () => 'RAMBA-' + Math.random().toString(36).toUpperCase().slice(2, 7);
-
 export function InviteProvider({ children }) {
-  const [invites, setInvites] = useState(INITIAL_INVITES);
+  const { user } = useAuth();
+  const [invites, setInvites] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Patient sends invite to a caregiver email
-  const sendInvite = (patientId, patientName, patientEmail, caregiverEmail) => {
-    const already = invites.find(i => i.patientId === patientId && i.caregiverEmail === caregiverEmail);
-    if (already) return { success: false, error: 'An invite has already been sent to this email.' };
-    const code = generateCode();
-    setInvites(prev => [...prev, { code, patientId, patientName, patientEmail, caregiverEmail, status: 'pending' }]);
-    return { success: true, code };
+  useEffect(() => {
+    if (!user) { setInvites([]); setPatients([]); setLoading(false); return; }
+    if (user.role === 'patient') {
+      api.getMyInvites().then(({ invites }) => setInvites(invites)).catch(() => {}).finally(() => setLoading(false));
+    }
+    if (user.role === 'caregiver') {
+      api.getMyPatients().then(({ patients }) => setPatients(patients)).catch(() => {}).finally(() => setLoading(false));
+    }
+    if (user.role === 'admin') setLoading(false);
+  }, [user]);
+
+  const sendInvite = async (caregiverEmail) => {
+    try {
+      const data = await api.sendInvite({ caregiverEmail });
+      await api.getMyInvites().then(({ invites }) => setInvites(invites));
+      return { success: true, code: data.code };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   };
 
-  // Caregiver redeems a code after login
-  const redeemInvite = (code, caregiverId) => {
-    const invite = invites.find(i => i.code === code.toUpperCase().trim());
-    if (!invite) return { success: false, error: 'Invalid invite code. Please check and try again.' };
-    if (invite.status === 'accepted') return { success: false, error: 'This invite has already been used.' };
-    setInvites(prev => prev.map(i => i.code === invite.code ? { ...i, status: 'accepted', caregiverId } : i));
-    return { success: true, invite };
+  const redeemInvite = async (code) => {
+    try {
+      const data = await api.redeemInvite({ code });
+      await api.getMyPatients().then(({ patients }) => setPatients(patients));
+      return { success: true, invite: data.invite };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   };
 
-  // Get all invites sent by a patient
-  const getPatientInvites = (patientId) => invites.filter(i => i.patientId === patientId);
+  const revokeInvite = async (code) => {
+    try {
+      await api.revokeInvite(code);
+      setInvites(prev => prev.filter(i => i.code !== code));
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
 
-  // Get all accepted patients for a caregiver (by caregiverId or email match)
-  const getCaregiverPatients = (caregiverId, caregiverEmail) =>
-    invites.filter(i => i.status === 'accepted' && (i.caregiverId === caregiverId || i.caregiverEmail === caregiverEmail));
-
-  const revokeInvite = (code) =>
-    setInvites(prev => prev.filter(i => i.code !== code));
+  // Keep same interface as before for components that use these
+  const getPatientInvites = () => invites;
+  const getCaregiverPatients = () => patients;
 
   return (
-    <InviteContext.Provider value={{ invites, sendInvite, redeemInvite, getPatientInvites, getCaregiverPatients, revokeInvite }}>
+    <InviteContext.Provider value={{ invites, patients, loading, sendInvite, redeemInvite, revokeInvite, getPatientInvites, getCaregiverPatients }}>
       {children}
     </InviteContext.Provider>
   );

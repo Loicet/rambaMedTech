@@ -27,12 +27,19 @@ export default function Tracker() {
     setForm(updated);
   };
 
-  const handleSubmit = (e) => {
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    addLog(form);
-    setSuccess(true);
-    setForm(emptyForm);
-    setTimeout(() => setSuccess(false), 3000);
+    setError('');
+    try {
+      await addLog({ metric: form.type, value: form.value, unit: form.unit, notes: form.note });
+      setSuccess(true);
+      setForm(emptyForm);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -46,6 +53,12 @@ export default function Tracker() {
         {/* Form */}
         <div className="bg-white rounded-xl p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">{t('addNewLog')}</h2>
+
+          {error && (
+            <div className="bg-red-50 text-red-600 border border-red-200 px-4 py-2.5 rounded-lg text-sm mb-4">
+              {error}
+            </div>
+          )}
 
           {success && (
             <div className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-lg text-sm mb-4">
@@ -103,13 +116,13 @@ export default function Tracker() {
               {logs.map(log => (
                 <div key={log.id} className="p-3.5 bg-gray-50 rounded-xl border-l-4 border-l-emerald-600">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wide">{log.type}</span>
-                    <span className="text-[11px] text-gray-300">{log.date}</span>
+                    <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wide">{log.metric || log.type}</span>
+                    <span className="text-[11px] text-gray-300">{log.loggedAt ? new Date(log.loggedAt).toLocaleDateString() : log.date}</span>
                   </div>
                   <div className="text-lg font-bold text-gray-800">
                     {log.value} <span className="text-xs font-normal text-gray-400">{log.unit}</span>
                   </div>
-                  {log.note && <div className="text-xs text-gray-400 mt-1">{log.note}</div>}
+                  {(log.notes || log.note) && <div className="text-xs text-gray-400 mt-1">{log.notes || log.note}</div>}
                 </div>
               ))}
             </div>

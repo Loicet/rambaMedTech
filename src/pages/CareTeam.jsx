@@ -12,15 +12,18 @@ export default function CareTeam() {
   const [success, setSuccess] = useState(null); // { code, email }
   const [copied, setCopied] = useState('');
 
-  const invites = getPatientInvites(user.id);
+  const [loading, setLoading] = useState(false);
+  const invites = getPatientInvites();
   const accepted = invites.filter(i => i.status === 'accepted');
   const pending  = invites.filter(i => i.status === 'pending');
 
-  const handleInvite = (e) => {
+  const handleInvite = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(null);
-    const result = sendInvite(user.id, user.name, user.email, email.trim().toLowerCase());
+    setLoading(true);
+    const result = await sendInvite(email.trim().toLowerCase());
+    setLoading(false);
     if (result.success) {
       setSuccess({ code: result.code, email: email.trim() });
       setEmail('');
@@ -74,8 +77,9 @@ export default function CareTeam() {
               />
             </div>
             <button type="submit"
-              className="bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-4 py-2.5 rounded-lg cursor-pointer transition-colors border-0 whitespace-nowrap">
-              Send Invite
+              disabled={loading}
+              className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white text-sm font-semibold px-4 py-2.5 rounded-lg cursor-pointer transition-colors border-0 whitespace-nowrap">
+              {loading ? 'Sending...' : 'Send Invite'}
             </button>
           </div>
 

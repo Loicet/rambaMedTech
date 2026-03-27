@@ -1,20 +1,37 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../api';
+import { useAuth } from './AuthContext';
 
 const HealthContext = createContext(null);
 
-const initialLogs = [
-  { id: 1, date: '2025-07-10', type: 'Blood Sugar', value: '112', unit: 'mg/dL', note: 'After breakfast' },
-  { id: 2, date: '2025-07-11', type: 'Blood Pressure', value: '128/82', unit: 'mmHg', note: 'Morning reading' },
-  { id: 3, date: '2025-07-12', type: 'Blood Sugar', value: '98', unit: 'mg/dL', note: 'Fasting' },
-];
-
 export function HealthProvider({ children }) {
-  const [logs, setLogs] = useState(initialLogs);
+  const { user } = useAuth();
+  const [logs, setLogs] = useState([]);
   const [wellbeingLogs, setWellbeingLogs] = useState([]);
 
-  const addLog = (log) => setLogs(prev => [{ ...log, id: Date.now() }, ...prev]);
+  useEffect(() => {
+    if (!user) { setLogs([]); setWellbeingLogs([]); return; }
+    api.getLogs().then(({ logs }) => setLogs(logs)).catch(() => {});
+    api.getEmotions().then(({ emotions }) => setWellbeingLogs(emotions)).catch(() => {});
+  }, [user]);
 
-  const addWellbeingLog = (entry) => setWellbeingLogs(prev => [{ ...entry, id: Date.now() }, ...prev]);
+  const addLog = async (log) => {
+    try {
+      const { log: created } = await api.addLog(log);
+      setLogs(prev => [created, ...prev]);
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const addWellbeingLog = async (entry) => {
+    try {
+      const { emotion } = await api.addEmotion(entry);
+      setWellbeingLogs(prev => [emotion, ...prev]);
+    } catch (err) {
+      throw err;
+    }
+  };
 
   return (
     <HealthContext.Provider value={{ logs, addLog, wellbeingLogs, addWellbeingLog }}>
