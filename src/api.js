@@ -67,4 +67,5 @@ export const api = {
   // Admin
   getAdminStats: () => request('/admin/stats'),
   getAdminUsers: () => request('/admin/users'),
+  getAdminReports: () => request('/admin/reports'),
 };
