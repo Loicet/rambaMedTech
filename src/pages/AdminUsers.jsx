@@ -60,7 +60,6 @@ export default function AdminUsers() {
             </div>
             <div className="flex flex-col gap-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-400">Role</span><span className="font-medium capitalize text-gray-700">{viewingUser.role}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Condition</span><span className="font-medium text-gray-700">{viewingUser.condition}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Joined</span><span className="font-medium text-gray-700">{new Date(viewingUser.createdAt).toLocaleDateString()}</span></div>
             </div>
           </div>
@@ -108,7 +107,7 @@ export default function AdminUsers() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm min-w-[540px]">
             <thead>
-              <tr>{['Name', 'Email', 'Role', 'Condition', 'Joined', 'Actions'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
+              <tr>{['Name', 'Email', 'Role', 'Joined', 'Actions'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(u => (
@@ -121,7 +120,6 @@ export default function AdminUsers() {
                   </td>
                   <td className={`${tdCls} text-gray-400 text-xs`}>{u.email}</td>
                   <td className={tdCls}><span className="bg-emerald-50 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-medium capitalize">{u.role}</span></td>
-                  <td className={tdCls}>{u.condition}</td>
                   <td className={`${tdCls} text-gray-400`}>{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className={tdCls}>
                     <button onClick={() => setViewingUser(u)} className="text-gray-400 hover:text-emerald-700 cursor-pointer bg-transparent border-0 transition-colors"><Eye size={14} /></button>
@@ -129,7 +127,7 @@ export default function AdminUsers() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-8 text-sm text-gray-400">No users found.</td></tr>
+                <tr><td colSpan={5} className="text-center py-8 text-sm text-gray-400">No users found.</td></tr>
               )}
             </tbody>
           </table>

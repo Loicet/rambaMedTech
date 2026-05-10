@@ -11,10 +11,15 @@ export function LanguageProvider({ children }) {
     localStorage.setItem('ramba_lang', l);
   };
 
+  // Called after login/OTP verify to restore the user's saved language
+  const restoreLang = (userLang) => {
+    if (userLang && userLang !== lang) switchLang(userLang);
+  };
+
   const t = (key) => translations[lang]?.[key] ?? translations['en'][key] ?? key;
 
   return (
-    <LanguageContext.Provider value={{ lang, switchLang, t }}>
+    <LanguageContext.Provider value={{ lang, switchLang, restoreLang, t }}>
       {children}
     </LanguageContext.Provider>
   );
