@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLang } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useInvite } from '../context/InviteContext';
-import { mockReminders } from '../data/mockData';
+import { api } from '../api';
 import { Heart, AlertCircle, Calendar, MessageCircle, CheckCircle, Pill, BarChart2, PersonStanding, Bell } from 'lucide-react';
 
 const patientTypeIcon = { medication: Pill, tracking: BarChart2, exercise: PersonStanding, general: Bell, checkin: MessageCircle };
@@ -157,22 +157,44 @@ export default function Notifications() {
   }
 
   // ── PATIENT VIEW ────────────────────────────────────────────────
-  const [reminders, setReminders] = useState(mockReminders);
+  const [reminders, setReminders] = useState([]);
+  const [loadingReminders, setLoadingReminders] = useState(true);
   const [form, setForm] = useState({ title: '', time: '', type: 'medication' });
   const [showForm, setShowForm] = useState(false);
 
-  const toggle = (id) => setReminders(prev => prev.map(r => r.id === id ? { ...r, active: !r.active } : r));
-  const remove = (id) => setReminders(prev => prev.filter(r => r.id !== id));
+  useEffect(() => {
+    api.getReminders()
+      .then(({ reminders }) => setReminders(reminders))
+      .catch(() => {})
+      .finally(() => setLoadingReminders(false));
+  }, []);
 
-  const addReminder = (e) => {
+  const toggle = async (id) => {
+    const { reminder } = await api.toggleReminder(id);
+    setReminders(prev => prev.map(r => r.id === id ? reminder : r));
+  };
+
+  const remove = async (id) => {
+    await api.deleteReminder(id);
+    setReminders(prev => prev.filter(r => r.id !== id));
+  };
+
+  const addReminder = async (e) => {
     e.preventDefault();
-    setReminders(prev => [...prev, { ...form, id: Date.now(), active: true }]);
+    const { reminder } = await api.createReminder(form);
+    setReminders(prev => [reminder, ...prev]);
     setForm({ title: '', time: '', type: 'medication' });
     setShowForm(false);
   };
 
   const active   = reminders.filter(r => r.active);
   const inactive = reminders.filter(r => !r.active);
+
+  if (loadingReminders) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   const ReminderCard = ({ r, isActive }) => (
     <div className={`flex items-center gap-3 bg-white rounded-xl px-4 py-3.5 shadow-sm border-l-4 transition-opacity
