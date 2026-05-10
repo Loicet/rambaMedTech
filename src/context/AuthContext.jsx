@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const { restoreLang, lang } = useLang();
 
-  // Restore session on mount
+  // Restore session on mount — read user from localStorage directly, no extra API call
   useEffect(() => {
     const token = localStorage.getItem('ramba_token');
     if (!token) { setLoading(false); return; }
@@ -24,6 +24,7 @@ export function AuthProvider({ children }) {
     try {
       const { token, user } = await api.login({ email, password });
       localStorage.setItem('ramba_token', token);
+      localStorage.setItem('ramba_user', JSON.stringify(user));
       setUser(user);
       restoreLang(user.lang);
       return { success: true };
@@ -36,7 +37,8 @@ export function AuthProvider({ children }) {
     try {
       const data = await api.register({ name, email, password, role, condition, lang });
       setPendingEmail(email);
-      return { success: true, otp: data.otp };
+      localStorage.setItem('ramba_pending_email', email);
+      return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -46,6 +48,8 @@ export function AuthProvider({ children }) {
     try {
       const { token, user } = await api.verifyOtp({ email: pendingEmail, otp });
       localStorage.setItem('ramba_token', token);
+      localStorage.setItem('ramba_user', JSON.stringify(user));
+      localStorage.removeItem('ramba_pending_email');
       setUser(user);
       restoreLang(user.lang);
       setPendingEmail(null);
@@ -66,6 +70,8 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('ramba_token');
+    localStorage.removeItem('ramba_user');
+    localStorage.removeItem('ramba_pending_email');
     setUser(null);
   };
 
