@@ -5,7 +5,19 @@ import { useLang } from '../context/LanguageContext';
 import { conditions } from '../data/mockData';
 import LangToggle from '../components/LangToggle';
 import RambaLogo from '../components/RambaLogo';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Check, X } from 'lucide-react';
+
+const passwordRules = [
+  { label: 'At least 8 characters', test: (p) => p.length >= 8 },
+  { label: 'One uppercase letter', test: (p) => /[A-Z]/.test(p) },
+  { label: 'One lowercase letter', test: (p) => /[a-z]/.test(p) },
+  { label: 'One number', test: (p) => /[0-9]/.test(p) },
+  { label: 'One special character (!@#$...)', test: (p) => /[^A-Za-z0-9]/.test(p) },
+];
+
+function isStrongPassword(p) {
+  return passwordRules.every(r => r.test(p));
+}
 
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'patient', condition: '' });
@@ -13,8 +25,9 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [devOtp, setDevOtp] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const inputRefs = useRef([]);
   const { register, verifyOtp, resendOtp } = useAuth();
   const { t } = useLang();
@@ -26,10 +39,14 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    if (!isStrongPassword(form.password)) {
+      setError('Password does not meet the requirements below.');
+      setLoading(false);
+      return;
+    }
     const result = await register(form.name, form.email, form.password, form.role, form.condition || null);
     setLoading(false);
     if (result.success) {
-      if (result.otp) setDevOtp(result.otp);
       setOtpStep(true);
     } else {
       setError(result.error);
@@ -59,8 +76,10 @@ export default function Register() {
   };
 
   const handleResend = async () => {
-    const newOtp = await resendOtp();
-    if (newOtp) { setDevOtp(newOtp); setOtp(['', '', '', '', '', '']); setOtpError(''); inputRefs.current[0]?.focus(); }
+    await resendOtp();
+    setOtp(['', '', '', '', '', '']);
+    setOtpError('');
+    inputRefs.current[0]?.focus();
   };
 
   const inputCls = "px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-600 transition-colors bg-white";
@@ -93,7 +112,30 @@ export default function Register() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-gray-600">{t('passwordLabel')}</label>
-              <input type="password" value={form.password} onChange={set('password')} placeholder={t('passwordMinLabel')} minLength={8} required className={inputCls} />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={set('password')}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                  placeholder={t('passwordMinLabel')} required
+                  className={inputCls + ' pr-11'} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 bg-transparent border-0 cursor-pointer p-0">
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {(passwordFocused || form.password) && (
+                <div className="flex flex-col gap-1 mt-1">
+                  {passwordRules.map(rule => (
+                    <div key={rule.label} className={`flex items-center gap-1.5 text-xs ${rule.test(form.password) ? 'text-emerald-600' : 'text-gray-400'}`}>
+                      {rule.test(form.password) ? <Check size={12} /> : <X size={12} />}
+                      {rule.label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -132,10 +174,6 @@ export default function Register() {
               <h2 className="text-xl font-bold text-gray-800 m-0">Verify your email</h2>
               <p className="text-sm text-gray-400 m-0">
                 We sent a 6-digit code to <strong className="text-gray-600">{form.email}</strong>
-              </p>
-              {/* Dev helper — remove in production */}
-              <p className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg">
-                Demo code: <strong>{devOtp}</strong>
               </p>
             </div>
 

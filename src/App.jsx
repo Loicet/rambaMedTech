@@ -12,6 +12,8 @@ import Dashboard from './pages/Dashboard';
 import Privacy from './pages/Privacy';
 import CareTeam from './pages/CareTeam';
 import RedeemInvite from './pages/RedeemInvite';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Tracker from './pages/Tracker';
 import Education from './pages/Education';
 import Wellbeing from './pages/Wellbeing';
@@ -39,6 +41,8 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/redeem-invite" element={<RedeemInvite />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/notifications" element={<Notifications />} />

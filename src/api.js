@@ -26,6 +26,8 @@ export const api = {
   verifyOtp: (body) => request('/auth/verify-otp', { method: 'POST', body: JSON.stringify(body) }),
   resendOtp: (body) => request('/auth/resend-otp', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request('/auth/me'),
+  forgotPassword: (body) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify(body) }),
+  resetPassword: (body) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
 
   // Health logs
   getLogs: () => request('/health/logs'),
@@ -61,6 +63,12 @@ export const api = {
 
   // Content / Education
   getContent: (conditionId) => request(`/content${conditionId ? `?conditionId=${conditionId}` : ''}`),
+
+  // Reminders
+  getReminders: () => request('/reminders'),
+  createReminder: (body) => request('/reminders', { method: 'POST', body: JSON.stringify(body) }),
+  toggleReminder: (id) => request(`/reminders/${id}/toggle`, { method: 'PATCH' }),
+  deleteReminder: (id) => request(`/reminders/${id}`, { method: 'DELETE' }),
 
   // Conditions
   getConditions: () => request('/conditions'),
