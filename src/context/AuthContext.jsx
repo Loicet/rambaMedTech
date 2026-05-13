@@ -33,9 +33,9 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const register = async (name, email, password, role, condition) => {
+  const register = async (name, email, password, role, condition, lang = 'en') => {
     try {
-      const data = await api.register({ name, email, password, role, condition, lang });
+      await api.register({ name, email, password, role, condition, lang });
       setPendingEmail(email);
       localStorage.setItem('ramba_pending_email', email);
       return { success: true };
@@ -68,6 +68,11 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const updateUser = (updatedUser) => {
+    setUser(prev => ({ ...prev, ...updatedUser }));
+    localStorage.setItem('ramba_user', JSON.stringify({ ...user, ...updatedUser }));
+  };
+
   const logout = () => {
     localStorage.removeItem('ramba_token');
     localStorage.removeItem('ramba_user');
@@ -76,7 +81,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, pendingEmail, login, register, verifyOtp, resendOtp, logout }}>
+    <AuthContext.Provider value={{ user, loading, pendingEmail, login, register, verifyOtp, resendOtp, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

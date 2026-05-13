@@ -26,6 +26,7 @@ export const api = {
   verifyOtp: (body) => request('/auth/verify-otp', { method: 'POST', body: JSON.stringify(body) }),
   resendOtp: (body) => request('/auth/resend-otp', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request('/auth/me'),
+  updateProfile: (body) => request('/auth/profile', { method: 'PATCH', body: JSON.stringify(body) }),
   forgotPassword: (body) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify(body) }),
   resetPassword: (body) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
 
@@ -55,6 +56,11 @@ export const api = {
   leaveCommunity: (id) => request(`/community/${id}/leave`, { method: 'DELETE' }),
   getPosts: (id) => request(`/community/${id}/posts`),
   createPost: (id, body) => request(`/community/${id}/posts`, { method: 'POST', body: JSON.stringify(body) }),
+  editPost: (postId, body) => request(`/community/posts/${postId}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  toggleLike: (postId) => request(`/community/posts/${postId}/like`, { method: 'POST' }),
+  deletePost: (postId) => request(`/community/posts/${postId}`, { method: 'DELETE' }),
+  getComments: (postId) => request(`/community/posts/${postId}/comments`),
+  addComment: (postId, body) => request(`/community/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify(body) }),
 
   // Notifications
   getNotifications: () => request('/notifications'),
@@ -72,6 +78,7 @@ export const api = {
 
   // Conditions
   getConditions: () => request('/conditions'),
+  addCondition: (body) => request('/conditions/mine', { method: 'POST', body: JSON.stringify(body) }),
   // Admin
   getAdminStats: () => request('/admin/stats'),
   getAdminUsers: () => request('/admin/users'),

@@ -3,25 +3,143 @@ import { useLang } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useInvite } from '../context/InviteContext';
 import { api } from '../api';
-import { Heart, AlertCircle, Calendar, MessageCircle, CheckCircle, Pill, BarChart2, PersonStanding, Bell } from 'lucide-react';
+import {
+  Heart, AlertCircle, Calendar, MessageCircle, CheckCircle,
+  Pill, BarChart2, PersonStanding, Bell, Users, UserCheck, Stethoscope,
+} from 'lucide-react';
 
 const patientTypeIcon = { medication: Pill, tracking: BarChart2, exercise: PersonStanding, general: Bell, checkin: MessageCircle };
-const inputCls = "px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-600 transition-colors bg-white";
+const inputCls = 'px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-600 transition-colors bg-white';
 
+// Pick an icon based on notification title keywords
+function notifIcon(title = '') {
+  const t = title.toLowerCase();
+  if (t.includes('caregiver') || t.includes('assigned') || t.includes('assignment')) return UserCheck;
+  if (t.includes('patient') || t.includes('accepted')) return Stethoscope;
+  if (t.includes('community') || t.includes('post') || t.includes('comment') || t.includes('liked')) return Users;
+  return Bell;
+}
+
+function notifBorderColor(title = '') {
+  const t = title.toLowerCase();
+  if (t.includes('caregiver') || t.includes('assigned') || t.includes('assignment') || t.includes('accepted')) return 'border-l-blue-400';
+  if (t.includes('community') || t.includes('post') || t.includes('comment') || t.includes('liked')) return 'border-l-emerald-400';
+  return 'border-l-gray-300';
+}
+
+// ── Shared notifications panel used by both roles ──────────────────────────
+function NotificationsPanel({ title, subtitle }) {
+  const [notifs, setNotifs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getNotifications()
+      .then(({ notifications }) => setNotifs(notifications))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const markRead = async (id) => {
+    await api.markRead(id).catch(() => {});
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const markAllRead = async () => {
+    await api.markAllRead().catch(() => {});
+    setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const unread = notifs.filter(n => !n.isRead);
+  const read   = notifs.filter(n => n.isRead);
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-10">
+      <div className="w-7 h-7 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Bell size={13} /> {title}
+            {unread.length > 0 && (
+              <span className="bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unread.length}</span>
+            )}
+          </h2>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+        </div>
+        {unread.length > 0 && (
+          <button onClick={markAllRead}
+            className="text-xs text-emerald-700 bg-transparent border-0 cursor-pointer hover:underline p-0">
+            Mark all read
+          </button>
+        )}
+      </div>
+
+      {notifs.length === 0 ? (
+        <p className="text-sm text-gray-400">No notifications yet.</p>
+      ) : (
+        <>
+          {unread.map(n => {
+            const Icon = notifIcon(n.title);
+            return (
+              <div key={n.id} className={`flex items-start gap-3 bg-white rounded-xl px-4 py-3.5 shadow-sm border-l-4 ${notifBorderColor(n.title)}`}>
+                <Icon size={16} className="text-gray-500 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-gray-800">{n.title}</div>
+                  <div className="text-xs text-gray-500 mt-0.5 break-words leading-relaxed">{n.message}</div>
+                  <div className="text-[10px] text-gray-300 mt-1">{new Date(n.createdAt).toLocaleString()}</div>
+                </div>
+                <button onClick={() => markRead(n.id)}
+                  className="text-gray-300 hover:text-emerald-600 bg-transparent border-0 cursor-pointer shrink-0 text-sm p-0">
+                  ✓
+                </button>
+              </div>
+            );
+          })}
+          {read.length > 0 && (
+            <details className="cursor-pointer">
+              <summary className="text-xs text-gray-400 select-none">
+                Show {read.length} read notification{read.length > 1 ? 's' : ''}
+              </summary>
+              <div className="flex flex-col gap-2 mt-2">
+                {read.map(n => {
+                  const Icon = notifIcon(n.title);
+                  return (
+                    <div key={n.id} className="flex items-start gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border-l-4 border-l-gray-200 opacity-50">
+                      <Icon size={14} className="text-gray-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-gray-600">{n.title}</div>
+                        <div className="text-xs text-gray-400 break-words">{n.message}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Caregiver patient nudges ───────────────────────────────────────────────
 const nudgeIcon = {
   wellbeing: Heart, appointment: Calendar, support: MessageCircle,
   alert: AlertCircle, medication: CheckCircle, tracking: CheckCircle,
   checkin: MessageCircle, general: Heart,
 };
-
 const nudgeBg = {
-  alert:       'border-l-red-400 bg-red-50',
-  wellbeing:   'border-l-pink-400 bg-pink-50',
-  support:     'border-l-purple-400 bg-purple-50',
-  medication:  'border-l-emerald-400 bg-emerald-50',
-  tracking:    'border-l-amber-400 bg-amber-50',
-  checkin:     'border-l-indigo-400 bg-indigo-50',
-  general:     'border-l-gray-300 bg-gray-50',
+  alert:      'border-l-red-400 bg-red-50',
+  wellbeing:  'border-l-pink-400 bg-pink-50',
+  support:    'border-l-purple-400 bg-purple-50',
+  medication: 'border-l-emerald-400 bg-emerald-50',
+  tracking:   'border-l-amber-400 bg-amber-50',
+  checkin:    'border-l-indigo-400 bg-indigo-50',
+  general:    'border-l-gray-300 bg-gray-50',
 };
 
 function generateNudges(patients, summaries) {
@@ -30,8 +148,6 @@ function generateNudges(patients, summaries) {
     const data = summaries[p.id] || {};
     const emotions = data.recentEmotions || [];
     const logs = data.recentLogs || [];
-
-    // Nudge if latest emotion is LOW or BAD
     const latest = emotions[0];
     if (latest && ['LOW', 'BAD'].includes(latest.emotion)) {
       nudges.push({
@@ -43,8 +159,6 @@ function generateNudges(patients, summaries) {
         done: false,
       });
     }
-
-    // Nudge if no logs in last 2 days
     if (logs.length === 0) {
       nudges.push({
         id: `nolog-${p.id}`,
@@ -62,16 +176,16 @@ function generateNudges(patients, summaries) {
 function CaregiverNotifications({ patients }) {
   const [summaries, setSummaries] = useState({});
   const [nudges, setNudges] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingNudges, setLoadingNudges] = useState(true);
 
   useEffect(() => {
-    if (patients.length === 0) { setLoading(false); return; }
+    if (patients.length === 0) { setLoadingNudges(false); return; }
     const token = localStorage.getItem('ramba_token');
-    const base = import.meta.env.VITE_API_URL;
+    const base = import.meta.env.VITE_API_URL + '/api';
     Promise.all(
       patients.map(p =>
         fetch(`${base}/community/caregiver/patient/${p.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }).then(r => r.ok ? r.json() : {}).then(data => ({ id: p.id, data }))
       )
     ).then(results => {
@@ -79,7 +193,7 @@ function CaregiverNotifications({ patients }) {
       results.forEach(({ id, data }) => { map[id] = data; });
       setSummaries(map);
       setNudges(generateNudges(patients, map));
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(() => {}).finally(() => setLoadingNudges(false));
   }, [patients]);
 
   const markDone = (id) => setNudges(prev => prev.map(n => n.id === id ? { ...n, done: true } : n));
@@ -87,24 +201,40 @@ function CaregiverNotifications({ patients }) {
   const pending  = nudges.filter(n => !n.done);
   const done     = nudges.filter(n => n.done);
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 m-0 mb-1">Patient Reminders</h1>
-        <p className="text-sm text-gray-400 m-0">Nudges based on what your patients have logged.</p>
+        <h1 className="text-2xl font-bold text-gray-900 m-0 mb-1">Notifications</h1>
+        <p className="text-sm text-gray-400 m-0">Your assignments and patient activity alerts.</p>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Needs attention ({pending.length})</h2>
-        {pending.length === 0
-          ? <p className="text-sm text-gray-400">All caught up — no pending nudges.</p>
-          : pending.map(n => {
+      {/* In-app notifications (assignment alerts, etc.) */}
+      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+        <NotificationsPanel
+          title="Your Notifications"
+          subtitle="Assignment alerts and updates from patients."
+        />
+      </div>
+
+      {/* Patient nudges */}
+      {patients.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Stethoscope size={13} /> Patient Activity
+            {pending.length > 0 && (
+              <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{pending.length}</span>
+            )}
+          </h2>
+          <p className="text-xs text-gray-400 -mt-1">Nudges based on what your patients have logged.</p>
+
+          {loadingNudges ? (
+            <div className="flex justify-center py-6">
+              <div className="w-6 h-6 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : pending.length === 0 ? (
+            <p className="text-sm text-gray-400">All caught up — no pending nudges.</p>
+          ) : (
+            pending.map(n => {
               const Icon = nudgeIcon[n.type] || Heart;
               return (
                 <div key={n.id} className={`flex items-start gap-3 rounded-xl px-4 py-3.5 shadow-sm border-l-4 ${nudgeBg[n.type] || nudgeBg.general}`}>
@@ -126,27 +256,31 @@ function CaregiverNotifications({ patients }) {
                 </div>
               );
             })
-        }
-      </div>
+          )}
 
-      {done.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Completed ({done.length})</h2>
-          {done.map(n => (
-            <div key={n.id} className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border-l-4 border-l-gray-200 opacity-50">
-              <CheckCircle size={16} className="text-green-500 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-gray-400">{n.patientName}</div>
-                <div className="text-sm text-gray-600 line-through">{n.text}</div>
+          {done.length > 0 && (
+            <details className="cursor-pointer">
+              <summary className="text-xs text-gray-400 select-none">Completed ({done.length})</summary>
+              <div className="flex flex-col gap-2 mt-2">
+                {done.map(n => (
+                  <div key={n.id} className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border-l-4 border-l-gray-200 opacity-50">
+                    <CheckCircle size={16} className="text-green-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-400">{n.patientName}</div>
+                      <div className="text-sm text-gray-600 line-through">{n.text}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
+            </details>
+          )}
         </div>
       )}
     </div>
   );
 }
 
+// ── Patient view ───────────────────────────────────────────────────────────
 export default function Notifications() {
   const { t } = useLang();
   const { user } = useAuth();
@@ -156,7 +290,7 @@ export default function Notifications() {
     return <CaregiverNotifications patients={patients} />;
   }
 
-  // ── PATIENT VIEW ────────────────────────────────────────────────
+  // Patient
   const [reminders, setReminders] = useState([]);
   const [loadingReminders, setLoadingReminders] = useState(true);
   const [form, setForm] = useState({ title: '', time: '', type: 'medication' });
@@ -190,12 +324,6 @@ export default function Notifications() {
   const active   = reminders.filter(r => r.active);
   const inactive = reminders.filter(r => !r.active);
 
-  if (loadingReminders) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
   const ReminderCard = ({ r, isActive }) => (
     <div className={`flex items-center gap-3 bg-white rounded-xl px-4 py-3.5 shadow-sm border-l-4 transition-opacity
       ${isActive ? 'border-l-emerald-600' : 'border-l-gray-300 opacity-60'}`}>
@@ -222,13 +350,23 @@ export default function Notifications() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex justify-between items-start flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 m-0 mb-1">{t('remindersTitle')}</h1>
-          <p className="text-sm text-gray-400 m-0">{t('remindersSubtitle')}</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 m-0 mb-1">{t('remindersTitle')}</h1>
+        <p className="text-sm text-gray-400 m-0">{t('remindersSubtitle')}</p>
+      </div>
+
+      {/* In-app notifications for patients (community activity, caregiver accepted, etc.) */}
+      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+        <NotificationsPanel title="Notifications" />
+      </div>
+
+      {/* Reminders */}
+      <div className="flex justify-between items-center flex-wrap gap-3">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+          <Bell size={13} /> {t('active')} Reminders ({active.length})
+        </h2>
         <button onClick={() => setShowForm(!showForm)}
-          className="bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-4 py-2.5 rounded-lg cursor-pointer transition-colors border-0 whitespace-nowrap">
+          className="bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-4 py-2 rounded-lg cursor-pointer transition-colors border-0 whitespace-nowrap">
           {t('addReminder')}
         </button>
       </div>
@@ -268,19 +406,25 @@ export default function Notifications() {
         </form>
       )}
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('active')} ({active.length})</h2>
-        {active.length === 0
-          ? <p className="text-sm text-gray-400">{t('noActiveReminders')}</p>
-          : active.map(r => <ReminderCard key={r.id} r={r} isActive={true} />)
-        }
-      </div>
-
-      {inactive.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('paused')} ({inactive.length})</h2>
-          {inactive.map(r => <ReminderCard key={r.id} r={r} isActive={false} />)}
+      {loadingReminders ? (
+        <div className="flex justify-center py-6">
+          <div className="w-7 h-7 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
         </div>
+      ) : (
+        <>
+          <div className="flex flex-col gap-2">
+            {active.length === 0
+              ? <p className="text-sm text-gray-400">{t('noActiveReminders')}</p>
+              : active.map(r => <ReminderCard key={r.id} r={r} isActive={true} />)
+            }
+          </div>
+          {inactive.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('paused')} ({inactive.length})</h2>
+              {inactive.map(r => <ReminderCard key={r.id} r={r} isActive={false} />)}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

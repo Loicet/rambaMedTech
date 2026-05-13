@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LanguageContext';
+import { api } from '../api';
 import LangToggle from './LangToggle';
 import {
   LayoutDashboard, BarChart2, BookOpen, Heart, Users, Bell,
-  Stethoscope, MessageSquare, ClipboardList, FileText,
-  TrendingUp, Wrench, ChevronDown, ChevronUp, LogOut, ShieldCheck, UserPlus, KeyRound
+  Stethoscope, ClipboardList, FileText,
+  TrendingUp, Wrench, ChevronDown, ChevronUp, LogOut, ShieldCheck, UserPlus, KeyRound, Settings, UserCircle
 } from 'lucide-react';
 import RambaLogo from './RambaLogo';
 
@@ -22,7 +23,6 @@ const patientNav = [
 const caregiverNav = [
   { to: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/caregiver/patients',  icon: Stethoscope,     label: 'My Patients' },
-  { to: '/caregiver/messages',  icon: MessageSquare,   label: 'Messages' },
   { to: '/caregiver/resources', icon: ClipboardList,   label: 'Resources' },
   { to: '/notifications',       icon: Bell,            label: 'Reminders' },
 ];
@@ -41,10 +41,19 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropRef = useRef(null);
   const mobileDropRef = useRef(null);
 
   const handleLogout = () => { logout(); navigate('/login'); };
+
+  // Fetch unread notification count for patients
+  useEffect(() => {
+    if (user?.role !== 'patient') return;
+    api.getNotifications()
+      .then(({ notifications }) => setUnreadCount(notifications.filter(n => !n.isRead).length))
+      .catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -99,6 +108,14 @@ export default function Navbar() {
               )}
               {user?.role === 'patient' && (
                 <>
+                  <Link to="/profile" onClick={() => setOpen(false)}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer no-underline flex items-center gap-2 transition-colors">
+                    <UserCircle size={14} className="text-emerald-600" /> My Profile
+                  </Link>
+                  <Link to="/settings" onClick={() => setOpen(false)}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer no-underline flex items-center gap-2 transition-colors">
+                    <Settings size={14} className="text-emerald-600" /> Settings
+                  </Link>
                   <Link to="/care-team" onClick={() => setOpen(false)}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer no-underline flex items-center gap-2 transition-colors">
                     <UserPlus size={14} className="text-emerald-600" /> My Care Team
@@ -129,12 +146,20 @@ export default function Navbar() {
         <nav className="flex flex-col gap-1 flex-1">
           {navItems.map(item => {
             const Icon = item.icon;
+            const isBell = item.icon === Bell;
             return (
               <NavLink key={item.to} to={item.to}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium no-underline transition-all
                   ${isActive ? 'bg-emerald-700 text-white' : 'text-gray-500 hover:bg-emerald-50 hover:text-emerald-700'}`}>
-                <Icon size={17} />
+                <span className="relative">
+                  <Icon size={17} />
+                  {isBell && unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </span>
                 {getLabel(item)}
               </NavLink>
             );
@@ -177,6 +202,14 @@ export default function Navbar() {
             )}
             {user?.role === 'patient' && (
               <>
+                <Link to="/profile" onClick={() => setMobileOpen(false)}
+                  className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 no-underline flex items-center gap-2 transition-colors">
+                  <UserCircle size={15} className="text-emerald-600" /> My Profile
+                </Link>
+                <Link to="/settings" onClick={() => setMobileOpen(false)}
+                  className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 no-underline flex items-center gap-2 transition-colors">
+                  <Settings size={15} className="text-emerald-600" /> Settings
+                </Link>
                 <Link to="/care-team" onClick={() => setMobileOpen(false)}
                   className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 no-underline flex items-center gap-2 transition-colors">
                   <UserPlus size={15} className="text-emerald-600" /> My Care Team
@@ -205,13 +238,21 @@ export default function Navbar() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex shadow-lg">
         {navItems.slice(0, 5).map(item => {
           const Icon = item.icon;
+          const isBell = item.icon === Bell;
           return (
             <NavLink key={item.to} to={item.to}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 py-2.5 flex-1 no-underline transition-colors ${
                   isActive ? 'text-emerald-700' : 'text-gray-400'
                 }`}>
-              <Icon size={20} />
+              <span className="relative">
+                <Icon size={20} />
+                {isBell && unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </span>
               <span className="text-[10px] font-medium">{getLabel(item)}</span>
             </NavLink>
           );

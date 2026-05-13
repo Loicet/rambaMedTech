@@ -41,6 +41,20 @@ export default function PatientDashboard() {
   const tips = conditionTips[lang]?.[user.condition] || conditionTips[lang]?.default || conditionTips.en.default;
   const todayTip = tips[new Date().getDay() % tips.length];
 
+  // Streak = number of unique days with logs in the last 7 days
+  const uniqueDays = new Set(logs.map(l => new Date(l.loggedAt).toDateString())).size;
+  const streak = Math.min(uniqueDays, 7);
+
+  // Mood emoji map
+  const moodDisplay = {
+    GREAT: { emoji: '😄', label: 'Great', color: 'text-green-600' },
+    GOOD:  { emoji: '🙂', label: 'Good',  color: 'text-lime-600' },
+    OKAY:  { emoji: '😐', label: 'Okay',  color: 'text-yellow-600' },
+    LOW:   { emoji: '😔', label: 'Low',   color: 'text-orange-500' },
+    BAD:   { emoji: '😢', label: 'Bad',   color: 'text-red-500' },
+  };
+  const mood = lastMood ? (moodDisplay[lastMood.emotion] || moodDisplay[lastMood.mood?.toUpperCase()]) : null;
+
   const quickActions = [
     { to: '/tracker',   Icon: BarChart2, label: t('logHealthData') },
     { to: '/wellbeing', Icon: Heart,     label: t('checkIn') },
@@ -51,8 +65,8 @@ export default function PatientDashboard() {
   const stats = [
     { Icon: ClipboardList, value: logs.length,          label: t('healthLogs') },
     { Icon: Activity,      value: wellbeingLogs.length, label: t('checkIns') },
-    { Icon: BarChart2,     value: 7,                    label: t('dayStreak') },
-    lastMood ? { Icon: Smile, value: lastMood.mood, label: t('lastMood') } : null,
+    { Icon: BarChart2,     value: streak,               label: t('dayStreak') },
+    mood ? { Icon: Smile, value: `${mood.emoji} ${mood.label}`, label: t('lastMood'), color: mood.color } : null,
   ].filter(Boolean);
 
   return (
@@ -72,9 +86,9 @@ export default function PatientDashboard() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {stats.map((s, i) => (
-          <div key={i} className="bg-white rounded-xl p-4 flex flex-col items-center gap-1 shadow-sm text-center">
+          <div key={i} className="bg-white rounded-xl p-4 flex flex-col items-center gap-1 shadow-sm text-center border border-gray-100">
             <s.Icon size={20} className="text-emerald-600" />
-            <div className="text-xl font-bold text-emerald-700">{s.value}</div>
+            <div className={`text-xl font-bold ${s.color || 'text-emerald-700'}`}>{s.value}</div>
             <div className="text-xs text-gray-400">{s.label}</div>
           </div>
         ))}

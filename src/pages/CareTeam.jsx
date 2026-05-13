@@ -99,7 +99,7 @@ export default function CareTeam() {
                   <Copy size={13} /> {copied === success.code ? 'Copied!' : 'Copy'}
                 </button>
               </div>
-              <p className="text-xs text-gray-400 m-0">In production, this code would be sent automatically to their email.</p>
+              <p className="text-xs text-gray-400 m-0">The invite code has been sent to their email. Share it with them directly as a backup.</p>
             </div>
           )}
         </form>

@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { usePushNotifications } from './hooks/usePushNotifications';
 import { HealthProvider } from './context/HealthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ConsentProvider } from './context/ConsentContext';
@@ -14,6 +15,7 @@ import CareTeam from './pages/CareTeam';
 import RedeemInvite from './pages/RedeemInvite';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import WellnessQuiz from './pages/WellnessQuiz';
 import Tracker from './pages/Tracker';
 import Education from './pages/Education';
 import Wellbeing from './pages/Wellbeing';
@@ -26,9 +28,12 @@ import AdminUsers from './pages/AdminUsers';
 import AdminContent from './pages/AdminContent';
 import AdminReports from './pages/AdminReports';
 import AdminSystem from './pages/AdminSystem';
+import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 
 function AppRoutes() {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
+  usePushNotifications(user);
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
@@ -43,6 +48,7 @@ function AppRoutes() {
       <Route path="/redeem-invite" element={<RedeemInvite />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/wellness-quiz" element={<WellnessQuiz />} />
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/notifications" element={<Notifications />} />
@@ -59,6 +65,8 @@ function AppRoutes() {
         <Route path="/admin/content" element={<AdminContent />} />
         <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/admin/system" element={<AdminSystem />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   );
