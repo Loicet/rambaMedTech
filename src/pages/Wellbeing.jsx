@@ -46,6 +46,9 @@ export default function Wellbeing() {
   const [note, setNote] = useState('');
   const [done, setDone] = useState(false);
 
+  // Progress: 0% at start, 50% after mood, 100% after submit
+  const progress = done ? 100 : step === 1 ? (selected ? 50 : 0) : 80;
+
   const toggleSymptom = (s) => setCheckedSymptoms(prev =>
     prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
   );
@@ -86,6 +89,17 @@ export default function Wellbeing() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 m-0 mb-1">{t('wellbeingTitle')}</h1>
         <p className="text-sm text-gray-400 m-0">{t('wellbeingSubtitle')}</p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs font-medium text-gray-500">Check-in Progress</span>
+          <span className="text-xs font-bold text-emerald-700">{progress}%</span>
+        </div>
+        <div className="w-full bg-gray-100 rounded-full h-2">
+          <div className="bg-emerald-600 h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+        </div>
       </div>
 
       <div className="bg-white rounded-xl p-5 shadow-sm">
