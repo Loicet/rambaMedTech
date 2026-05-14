@@ -5,7 +5,14 @@ import { useLang } from '../context/LanguageContext';
 import { api } from '../api';
 import LangToggle from '../components/LangToggle';
 import RambaLogo from '../components/RambaLogo';
-import { ShieldCheck, Eye, EyeOff, Check, X, ChevronRight, ChevronLeft, Heart, Activity, User, Scale } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Check, X, ChevronRight, ChevronLeft, Heart, Activity, User, Scale, Leaf, Stethoscope, Shield, Users } from 'lucide-react';
+
+const INTENTS = [
+  { id: 'habits',     label: 'I want to build healthier habits',    icon: Leaf },
+  { id: 'condition',  label: "I'm managing a health condition",      icon: Stethoscope },
+  { id: 'preventive', label: 'I want preventive health support',     icon: Shield },
+  { id: 'caregiver',  label: "I'm supporting someone I care about", icon: Users },
+];
 
 const CONDITIONS = [
   'Asthma', 'Diabetes', 'Hypertension', 'Cardiovascular Disease',
@@ -30,6 +37,7 @@ function LeftPanel({ step }) {
     { title: 'Your health journey starts here', sub: 'Track, learn, and thrive with RambaMedTech.' },
     { title: 'Verify your identity', sub: 'We sent a code to your email to keep your account secure.' },
     { title: 'Welcome to RambaMedTech', sub: 'Your personalized companion for healthier living.' },
+    { title: 'How can Ramba support you?', sub: "Everyone's journey is different — tell us a little about yours." },
     { title: 'Tell us about yourself', sub: 'Help us personalize your experience.' },
     { title: 'Your conditions', sub: 'Select all that apply so we can tailor your care.' },
   ];
@@ -54,7 +62,7 @@ function LeftPanel({ step }) {
           <p className="text-emerald-100 text-sm leading-relaxed">{msg.sub}</p>
         </div>
         <div className="flex gap-2">
-          {[1,2,3,4,5].map(i => (
+          {[1,2,3,4,5,6].map(i => (
             <div key={i} className={`h-1.5 rounded-full transition-all ${i === step ? 'bg-white w-6' : 'bg-white/30 w-3'}`} />
           ))}
         </div>
@@ -66,8 +74,9 @@ function LeftPanel({ step }) {
 
 export default function Register() {
   const [step, setStep] = useState(1);
+  const [intent, setIntent] = useState(null);
   const [form, setForm] = useState({
-    name: '', email: '', password: '', role: 'patient',
+    name: '', email: '', password: '',
     birthYear: '', gender: '', height: '', weight: '',
     conditions: [],
   });
@@ -78,7 +87,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const inputRefs = useRef([]);
-  const { register, verifyOtp, resendOtp } = useAuth();
+  const { register, verifyOtp, resendOtp, updateUser } = useAuth();
   const { t } = useLang();
   const navigate = useNavigate();
 
@@ -121,10 +130,7 @@ export default function Register() {
   const handleRegister = async () => {
     setLoading(true);
     setError('');
-    const result = await register(
-      form.name, form.email, form.password, form.role,
-      form.conditions[0] || null
-    );
+    const result = await register(form.name, form.email, form.password, null);
     setLoading(false);
     if (result.success) setStep(2);
     else setError(result.error);
@@ -206,14 +212,6 @@ export default function Register() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-600">{t('iAmA')}</label>
-                <select value={form.role} onChange={set('role')} className={inputCls}>
-                  <option value="patient">{t('rolePatient')}</option>
-                  <option value="caregiver">{t('roleCaregiver')}</option>
-                </select>
-              </div>
-
               <button type="submit"
                 className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-lg text-sm cursor-pointer transition-colors flex items-center justify-center gap-2">
                 Continue <ChevronRight size={16} />
@@ -279,15 +277,46 @@ export default function Register() {
                 className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 px-8 rounded-lg text-sm cursor-pointer transition-colors flex items-center gap-2">
                 Get Started <ChevronRight size={16} />
               </button>
-              <button onClick={() => navigate('/dashboard')}
-                className="text-sm text-gray-400 bg-transparent border-0 cursor-pointer hover:text-gray-600">
-                Skip for now
+            </div>
+          )}
+
+          {/* ── Step 4: Intent ── */}
+          {step === 4 && (
+            <div className="flex flex-col gap-5">
+              <div>
+                <h2 className="text-xl font-bold text-gray-800 m-0 mb-1">How can Ramba support you?</h2>
+                <p className="text-sm text-gray-400 m-0">Everyone's journey is different — tell us a little about yours.</p>
+              </div>
+              <div className="flex flex-col gap-3">
+                {INTENTS.map(({ id, label, icon: Icon }) => (
+                  <button key={id} type="button" onClick={() => setIntent(id)}
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 cursor-pointer transition-all text-left
+                      ${intent === id ? 'border-emerald-600 bg-emerald-50' : 'border-gray-200 bg-white hover:border-emerald-300'}`}>
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all
+                      ${intent === id ? 'bg-emerald-600' : 'bg-gray-100'}`}>
+                      <Icon size={18} className={intent === id ? 'text-white' : 'text-gray-500'} />
+                    </div>
+                    <span className={`text-sm font-medium ${intent === id ? 'text-emerald-800' : 'text-gray-700'}`}>{label}</span>
+                    {intent === id && <Check size={16} className="text-emerald-600 ml-auto" />}
+                  </button>
+                ))}
+              </div>
+              <button
+                disabled={!intent}
+                onClick={async () => {
+                  const result = await api.updateProfile({ intent }).catch(() => null);
+                  if (result?.user) updateUser(result.user);
+                  if (intent === 'caregiver') navigate('/dashboard');
+                  else setStep(5);
+                }}
+                className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg text-sm cursor-pointer transition-colors flex items-center justify-center gap-2 border-0">
+                Continue <ChevronRight size={16} />
               </button>
             </div>
           )}
 
-          {/* ── Step 4: Health onboarding ── */}
-          {step === 4 && (
+          {/* ── Step 5: Health onboarding ── */}
+          {step === 5 && (
             <div className="flex flex-col gap-5">
               <div>
                 <h2 className="text-xl font-bold text-gray-800 m-0 mb-1">Tell us about yourself</h2>
@@ -342,12 +371,11 @@ export default function Register() {
               })()}
 
               <div className="flex gap-3">
-                <button onClick={() => setStep(3)}
+                <button onClick={() => setStep(4)}
                   className="px-4 py-2.5 border-2 border-gray-200 text-gray-600 text-sm font-medium rounded-lg cursor-pointer hover:border-gray-300 transition-colors bg-white flex items-center gap-1">
                   <ChevronLeft size={16} /> Back
                 </button>
                 <button onClick={async () => {
-                  // Save health metrics immediately
                   if (form.birthYear || form.gender || form.height || form.weight) {
                     await api.updateProfile({
                       birthYear: form.birthYear || undefined,
@@ -356,7 +384,8 @@ export default function Register() {
                       weight: form.weight || undefined,
                     }).catch(() => {});
                   }
-                  setStep(5);
+                  if (intent === 'habits' || intent === 'preventive') navigate('/dashboard');
+                  else setStep(6);
                 }}
                   className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2.5 rounded-lg text-sm cursor-pointer transition-colors border-0 flex items-center justify-center gap-2">
                   Continue <ChevronRight size={16} />
@@ -369,12 +398,16 @@ export default function Register() {
             </div>
           )}
 
-          {/* ── Step 5: Condition selection ── */}
-          {step === 5 && (
+          {/* ── Step 6: Condition selection ── */}
+          {step === 6 && (
             <div className="flex flex-col gap-5">
               <div>
-                <h2 className="text-xl font-bold text-gray-800 m-0 mb-1">Select your conditions</h2>
-                <p className="text-sm text-gray-400 m-0">Select all that apply. You can update this later.</p>
+                <h2 className="text-xl font-bold text-gray-800 m-0 mb-1">
+                  {intent === 'condition' ? 'Which condition are you managing?' : 'Would you like to monitor any health conditions?'}
+                </h2>
+                <p className="text-sm text-gray-400 m-0">
+                  {intent === 'condition' ? 'Select all that apply. You can update this later.' : 'This is completely optional — you can always add this later.'}
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -395,7 +428,7 @@ export default function Register() {
               </div>
 
               <div className="flex gap-3">
-                <button onClick={() => setStep(4)}
+                <button onClick={() => setStep(5)}
                   className="px-4 py-2.5 border-2 border-gray-200 text-gray-600 text-sm font-medium rounded-lg cursor-pointer hover:border-gray-300 transition-colors bg-white flex items-center gap-1">
                   <ChevronLeft size={16} /> Back
                 </button>

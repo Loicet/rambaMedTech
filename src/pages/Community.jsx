@@ -161,6 +161,8 @@ export default function Community() {
   const [pickingCondition, setPickingCondition] = useState(false);
   const [conditionLoading, setConditionLoading] = useState(false);
 
+  const isWellness = user?.intent === 'habits' || user?.intent === 'preventive';
+
   const guidelines = [t('guideline1'), t('guideline2'), t('guideline3'), t('guideline4')];
 
   useEffect(() => {
@@ -170,8 +172,7 @@ export default function Community() {
       setSelectedCommunity(joined || communities[0] || null);
     }).catch(() => {});
 
-    // Load all conditions if user has none
-    if (!user?.condition) {
+    if (!user?.condition && !isWellness) {
       api.getConditions().then(({ conditions }) => setAllConditions(conditions)).catch(() => {});
     }
   }, []);
@@ -261,8 +262,8 @@ export default function Community() {
         <p className="text-sm text-gray-400 m-0">{t('communitySubtitle')}</p>
       </div>
 
-      {/* No condition — prompt user to pick one */}
-      {!user?.condition && (
+      {/* No condition prompt — only for patients, not wellness users */}
+      {!user?.condition && !isWellness && (
         <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-5 flex flex-col gap-4">
           <div>
             <p className="text-sm font-semibold text-emerald-800 m-0 mb-1">Choose your health condition to join your community</p>

@@ -8,8 +8,9 @@ import { Clock, BookOpen, Star } from 'lucide-react';
 export default function Education() {
   const { user } = useAuth();
   const { t } = useLang();
-  const userCondition = user?.condition || null;
-  const [filter, setFilter] = useState(userCondition || 'All');
+  const isWellness = user?.intent === 'habits' || user?.intent === 'preventive';
+  const userCondition = isWellness ? null : (user?.condition || null);
+  const [filter, setFilter] = useState('All');
   const [selected, setSelected] = useState(null);
   const [articles, setArticles] = useState([]);
 
@@ -17,9 +18,17 @@ export default function Education() {
     api.getContent().then(({ content }) => setArticles(content || [])).catch(() => {});
   }, []);
 
-  const filtered = filter === 'All' ? articles : articles.filter(a => a.condition?.name === filter);
+  // Wellness users only see general (category-based) articles
+  const visibleArticles = isWellness ? articles.filter(a => a.category && !a.condition) : articles;
+  const filtered = filter === 'All'
+    ? visibleArticles
+    : visibleArticles.filter(a => (a.condition?.name === filter) || (a.category === filter));
+
+  const categories = [...new Set(visibleArticles.filter(a => a.category).map(a => a.category))];
 
   if (selected) {
+    const label = selected.condition?.name || selected.category || 'General';
+    const isForUser = !isWellness && selected.condition?.name === userCondition;
     return (
       <div className="flex flex-col gap-5">
         <button onClick={() => setSelected(null)}
@@ -29,9 +38,9 @@ export default function Education() {
         <div className="bg-white rounded-xl p-5 sm:p-7 shadow-sm">
           <div className="flex items-center gap-2 flex-wrap mb-3">
             <span className="inline-block bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-              {selected.condition?.name || selected.condition}
+              {label}
             </span>
-            {(selected.condition?.name || selected.condition) === userCondition && (
+            {isForUser && (
               <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 text-xs font-bold px-2.5 py-1 rounded-full">
                 <Star size={10} /> For You
               </span>
@@ -53,7 +62,7 @@ export default function Education() {
         <p className="text-sm text-gray-400 m-0">{t('educationSubtitle')}</p>
       </div>
 
-      {/* Personalised banner */}
+      {/* Personalised banner — only for patients with a condition */}
       {userCondition && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-3">
           <BookOpen size={18} className="text-emerald-600 shrink-0" />
@@ -69,7 +78,8 @@ export default function Education() {
         </div>
       )}
 
-      {/* Filter tabs */}
+      {/* Filter tabs — conditions for patients, categories for wellness */}
+      {!isWellness && (
       <div className="flex gap-2 overflow-x-auto pb-1">
         <button onClick={() => setFilter('All')}
           className={`px-4 py-1.5 rounded-full text-sm font-medium border-2 cursor-pointer transition-all whitespace-nowrap shrink-0
@@ -85,19 +95,36 @@ export default function Education() {
           </button>
         ))}
       </div>
+      )}
+      {isWellness && categories.length > 0 && (
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        <button onClick={() => setFilter('All')}
+          className={`px-4 py-1.5 rounded-full text-sm font-medium border-2 cursor-pointer transition-all whitespace-nowrap shrink-0
+            ${filter === 'All' ? 'bg-emerald-700 text-white border-emerald-700' : 'bg-white text-gray-500 border-gray-200 hover:border-emerald-600 hover:text-emerald-700'}`}>
+          All
+        </button>
+        {categories.map(c => (
+          <button key={c} onClick={() => setFilter(c)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium border-2 cursor-pointer transition-all whitespace-nowrap shrink-0
+              ${filter === c ? 'bg-emerald-700 text-white border-emerald-700' : 'bg-white text-gray-500 border-gray-200 hover:border-emerald-600 hover:text-emerald-700'}`}>
+            {c}
+          </button>
+        ))}
+      </div>
+      )}
 
       {/* Articles grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map(article => {
-              const condName = article.condition?.name || article.condition;
-              const isForUser = condName === userCondition;
+              const label = article.condition?.name || article.category || 'General';
+              const isForUser = !isWellness && article.condition?.name === userCondition;
           return (
             <div key={article.id} onClick={() => setSelected(article)}
               className={`bg-white rounded-xl p-4 sm:p-5 shadow-sm border-2 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer flex flex-col gap-2
                 ${isForUser ? 'border-emerald-200 hover:border-emerald-500' : 'border-transparent hover:border-emerald-600'}`}>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="inline-block bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
-                  {article.condition?.name || article.condition}
+                  {label}
                 </span>
                 {isForUser && (
                   <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-1 rounded-full">
@@ -117,7 +144,9 @@ export default function Education() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-12 text-gray-400 text-sm">No articles found for this condition yet.</div>
+        <div className="text-center py-12 text-gray-400 text-sm">
+          {isWellness ? 'No articles found.' : 'No articles found for this condition yet.'}
+        </div>
       )}
     </div>
   );

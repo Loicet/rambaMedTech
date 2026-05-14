@@ -33,9 +33,9 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const register = async (name, email, password, role, condition, lang = 'en') => {
+  const register = async (name, email, password, intent, lang = 'en') => {
     try {
-      await api.register({ name, email, password, role, condition, lang });
+      await api.register({ name, email, password, intent, lang });
       setPendingEmail(email);
       localStorage.setItem('ramba_pending_email', email);
       return { success: true };

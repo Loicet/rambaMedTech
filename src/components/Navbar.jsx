@@ -20,6 +20,14 @@ const patientNav = [
   { to: '/notifications', icon: Bell,             key: 'navReminders' },
 ];
 
+const wellnessNav = [
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Home' },
+  { to: '/education',     icon: BookOpen,        label: 'Articles' },
+  { to: '/wellbeing',     icon: Heart,           label: 'Mood' },
+  { to: '/community',     icon: Users,           label: 'Community' },
+  { to: '/notifications', icon: Bell,            label: 'Notifications' },
+];
+
 const caregiverNav = [
   { to: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/caregiver/patients',  icon: Stethoscope,     label: 'My Patients' },
@@ -64,10 +72,12 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const navItems = user?.role === 'admin' ? adminNav : user?.role === 'caregiver' ? caregiverNav : patientNav;
+  const isWellness = user?.intent === 'habits' || user?.intent === 'preventive';
+  const navItems = user?.role === 'admin' ? adminNav : user?.role === 'caregiver' ? caregiverNav : isWellness ? wellnessNav : patientNav;
   const initials = user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
   const getLabel = (item) => {
+    if (item.label) return item.label;
     if (user?.role === 'patient') return t(item.key) || item.label;
     return item.label;
   };
@@ -89,7 +99,7 @@ export default function Navbar() {
             </div>
             <div className="text-left hidden lg:block">
               <div className="text-sm font-semibold text-gray-800 leading-tight">{user?.name}</div>
-              <div className="text-xs text-gray-400 capitalize">{user?.role}</div>
+              <div className="text-xs text-gray-400 capitalize">{isWellness ? 'Wellness' : user?.role}</div>
             </div>
             {open ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
           </button>
@@ -98,7 +108,7 @@ export default function Navbar() {
             <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
               <div className="px-4 py-2 border-b border-gray-100 mb-1">
                 <div className="text-sm font-semibold text-gray-800">{user?.name}</div>
-                <div className="text-xs text-gray-400 capitalize">{user?.role}</div>
+                <div className="text-xs text-gray-400 capitalize">{isWellness ? 'Wellness' : user?.role}</div>
               </div>
               {user?.role !== 'admin' && (
                 <div className="px-4 py-2 flex items-center justify-between">
@@ -106,7 +116,7 @@ export default function Navbar() {
                   <LangToggle />
                 </div>
               )}
-              {user?.role === 'patient' && (
+              {(user?.role === 'patient' && !isWellness) && (
                 <>
                   <Link to="/profile" onClick={() => setOpen(false)}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer no-underline flex items-center gap-2 transition-colors">
@@ -123,6 +133,18 @@ export default function Navbar() {
                   <Link to="/privacy" onClick={() => setOpen(false)}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer no-underline flex items-center gap-2 transition-colors">
                     <ShieldCheck size={14} className="text-emerald-600" /> Data Privacy
+                  </Link>
+                </>
+              )}
+              {isWellness && (
+                <>
+                  <Link to="/profile" onClick={() => setOpen(false)}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer no-underline flex items-center gap-2 transition-colors">
+                    <UserCircle size={14} className="text-emerald-600" /> My Profile
+                  </Link>
+                  <Link to="/settings" onClick={() => setOpen(false)}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer no-underline flex items-center gap-2 transition-colors">
+                    <Settings size={14} className="text-emerald-600" /> Settings
                   </Link>
                 </>
               )}
@@ -192,7 +214,7 @@ export default function Navbar() {
           <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50 py-2">
             <div className="px-4 py-2 border-b border-gray-100 mb-1">
               <div className="text-sm font-semibold text-gray-800">{user?.name}</div>
-              <div className="text-xs text-gray-400 capitalize">{user?.role}</div>
+              <div className="text-xs text-gray-400 capitalize">{isWellness ? 'Wellness' : user?.role}</div>
             </div>
             {user?.role !== 'admin' && (
               <div className="px-4 py-2 flex items-center justify-between">
@@ -200,7 +222,7 @@ export default function Navbar() {
                 <LangToggle />
               </div>
             )}
-            {user?.role === 'patient' && (
+            {(user?.role === 'patient' && !isWellness) && (
               <>
                 <Link to="/profile" onClick={() => setMobileOpen(false)}
                   className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 no-underline flex items-center gap-2 transition-colors">
@@ -217,6 +239,18 @@ export default function Navbar() {
                 <Link to="/privacy" onClick={() => setMobileOpen(false)}
                   className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 no-underline flex items-center gap-2 transition-colors">
                   <ShieldCheck size={15} className="text-emerald-600" /> Data Privacy
+                </Link>
+              </>
+            )}
+            {isWellness && (
+              <>
+                <Link to="/profile" onClick={() => setMobileOpen(false)}
+                  className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 no-underline flex items-center gap-2 transition-colors">
+                  <UserCircle size={15} className="text-emerald-600" /> My Profile
+                </Link>
+                <Link to="/settings" onClick={() => setMobileOpen(false)}
+                  className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 no-underline flex items-center gap-2 transition-colors">
+                  <Settings size={15} className="text-emerald-600" /> Settings
                 </Link>
               </>
             )}

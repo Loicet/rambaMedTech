@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LanguageContext';
 import { useConsent } from '../context/ConsentContext';
 import { useInvite } from '../context/InviteContext';
+import { api } from '../api';
 import { AlertCircle, Activity, EyeOff, ShieldCheck, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -46,10 +47,7 @@ export default function CaregiverDashboard() {
     if (!selected) return;
     getConsent(selected.id);
     if (patientData[selected.id]) return;
-    fetch(`${import.meta.env.VITE_API_URL}/community/caregiver/patient/${selected.id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('ramba_token')}` }
-    })
-      .then(r => r.ok ? r.json() : {})
+    api.getPatientSummary(selected.id)
       .then(summary => setPatientData(prev => ({ ...prev, [selected.id]: summary })))
       .catch(() => setPatientData(prev => ({ ...prev, [selected.id]: {} })));
   }, [selected]);
@@ -66,7 +64,7 @@ export default function CaregiverDashboard() {
   );
 
   // DEBUG — remove after fix
-  console.log('linkedPatients:', linkedPatients, 'inviteLoading:', inviteLoading);
+  // console.log('linkedPatients:', linkedPatients, 'inviteLoading:', inviteLoading);
 
   if (linkedPatients.length === 0) {
     return (

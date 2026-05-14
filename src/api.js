@@ -76,6 +76,9 @@ export const api = {
   toggleReminder: (id) => request(`/reminders/${id}/toggle`, { method: 'PATCH' }),
   deleteReminder: (id) => request(`/reminders/${id}`, { method: 'DELETE' }),
 
+  // Caregiver
+  getPatientSummary: (patientId) => request(`/community/caregiver/patient/${patientId}`),
+
   // Conditions
   getConditions: () => request('/conditions'),
   addCondition: (body) => request('/conditions/mine', { method: 'POST', body: JSON.stringify(body) }),

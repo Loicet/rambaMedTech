@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useHealth } from '../context/HealthContext';
 import { useLang } from '../context/LanguageContext';
 import { SmilePlus, Smile, Meh, Frown, CloudRain, CheckCircle, Clock } from 'lucide-react';
@@ -36,8 +37,10 @@ function WellbeingHistory({ logs, t }) {
 }
 
 export default function Wellbeing() {
+  const { user } = useAuth();
   const { wellbeingLogs, addWellbeingLog } = useHealth();
   const { t } = useLang();
+  const isWellness = user?.intent === 'habits' || user?.intent === 'preventive';
   const moods = moodKeys.map(m => ({ ...m, label: t(m.labelKey) }));
   const symptoms = symptomKeys.map(k => t(k));
   const [step, setStep] = useState(1);
@@ -46,7 +49,6 @@ export default function Wellbeing() {
   const [note, setNote] = useState('');
   const [done, setDone] = useState(false);
 
-  // Progress: 0% at start, 50% after mood, 100% after submit
   const progress = done ? 100 : step === 1 ? (selected ? 50 : 0) : 80;
 
   const toggleSymptom = (s) => setCheckedSymptoms(prev =>
@@ -73,10 +75,53 @@ export default function Wellbeing() {
             <DoneIcon size={56} className={selected.color} />
           </div>
           <h2 className="text-xl font-bold text-emerald-700 mb-2">{t('checkinComplete')}</h2>
-          <p className="text-sm text-gray-500 leading-relaxed mb-5">{t('checkinThanks')}</p>
+          <p className="text-sm text-gray-500 leading-relaxed mb-5">
+            {isWellness ? 'Thanks for checking in. Every moment of self-awareness counts.' : t('checkinThanks')}
+          </p>
           <button onClick={reset}
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-6 py-2.5 rounded-lg text-sm cursor-pointer transition-colors border-0 w-full sm:w-auto">
             {t('newCheckin')}
+          </button>
+        </div>
+        <WellbeingHistory logs={wellbeingLogs} t={t} />
+      </div>
+    );
+  }
+
+  // Wellness users: single step — mood + optional note, no symptoms
+  if (isWellness) {
+    return (
+      <div className="flex flex-col gap-5">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 m-0 mb-1">How are you feeling?</h1>
+          <p className="text-sm text-gray-400 m-0">A quick check-in — just for you, no pressure.</p>
+        </div>
+        <div className="bg-white rounded-xl p-5 shadow-sm flex flex-col gap-5">
+          <div className="grid grid-cols-5 gap-2">
+            {moods.map(m => {
+              const Icon = m.Icon;
+              return (
+                <button key={m.labelKey} onClick={() => setSelected(m)}
+                  className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border-2 cursor-pointer transition-all
+                    ${selected?.labelKey === m.labelKey
+                      ? `${m.bg} ring-2 ${m.ring} border-transparent`
+                      : 'bg-white border-gray-200 hover:border-gray-300'}`}>
+                  <Icon size={28} className={m.color} />
+                  <span className="text-[10px] sm:text-xs text-gray-600 font-medium leading-tight text-center">{m.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-gray-500">Anything on your mind? (optional)</label>
+            <textarea value={note} onChange={e => setNote(e.target.value)}
+              placeholder="Just a few words..."
+              rows={2}
+              className="px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-600 transition-colors resize-none" />
+          </div>
+          <button onClick={handleSubmit} disabled={!selected}
+            className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg text-sm cursor-pointer transition-colors border-0">
+            Save check-in
           </button>
         </div>
         <WellbeingHistory logs={wellbeingLogs} t={t} />

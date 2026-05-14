@@ -15,6 +15,7 @@ import CareTeam from './pages/CareTeam';
 import RedeemInvite from './pages/RedeemInvite';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import WellnessDashboard from './pages/WellnessDashboard';
 import WellnessQuiz from './pages/WellnessQuiz';
 import Tracker from './pages/Tracker';
 import Education from './pages/Education';
